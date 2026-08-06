@@ -1,0 +1,660 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="color-scheme" content="dark light" />
+  <title>T3 Code — Codebase Field Guide</title>
+  <style>
+    :root {
+      --bg: #11130f;
+      --panel: #181b16;
+      --panel-2: #20241d;
+      --ink: #edf1e7;
+      --muted: #9da794;
+      --line: #343b30;
+      --acid: #c9ff52;
+      --cyan: #68d9d1;
+      --orange: #ff9f52;
+      --red: #ff7068;
+      --blue: #84a9ff;
+      --shadow: rgba(0,0,0,.32);
+      --code: #0d0f0c;
+      --sidebar: 292px;
+    }
+    html[data-theme="light"] {
+      --bg: #f1f0e8;
+      --panel: #faf9f1;
+      --panel-2: #e8e7dd;
+      --ink: #171a15;
+      --muted: #626a5c;
+      --line: #c9cabd;
+      --acid: #5e8600;
+      --cyan: #007e78;
+      --orange: #a94c00;
+      --red: #b62929;
+      --blue: #315abb;
+      --shadow: rgba(44,48,38,.12);
+      --code: #e5e4d9;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      background:
+        linear-gradient(rgba(130,140,110,.045) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(130,140,110,.035) 1px, transparent 1px),
+        var(--bg);
+      background-size: 24px 24px;
+      color: var(--ink);
+      font-family: Georgia, 'Times New Roman', serif;
+      line-height: 1.58;
+    }
+    a { color: inherit; }
+    code, pre, .mono, .eyebrow, nav, .chip, .stat-label, th, .path, button, input {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+    .shell { display: grid; grid-template-columns: var(--sidebar) minmax(0,1fr); min-height: 100vh; }
+    aside {
+      position: sticky; top: 0; height: 100vh; overflow: auto;
+      border-right: 1px solid var(--line); background: color-mix(in srgb, var(--bg) 94%, transparent);
+      backdrop-filter: blur(12px); padding: 28px 22px; z-index: 10;
+    }
+    .brand { display:flex; align-items:center; gap:12px; margin-bottom: 22px; }
+    .brand-mark { width:36px; height:36px; border:1px solid var(--acid); display:grid; place-items:center; color:var(--acid); font:700 15px ui-monospace, monospace; transform:rotate(-2deg); }
+    .brand strong { display:block; letter-spacing:.04em; }
+    .brand small { color:var(--muted); font:11px ui-monospace, monospace; }
+    .tools { display:grid; grid-template-columns:1fr auto; gap:8px; margin-bottom:20px; }
+    input { width:100%; min-width:0; border:1px solid var(--line); background:var(--panel); color:var(--ink); padding:9px 10px; outline:none; }
+    input:focus { border-color:var(--acid); box-shadow:0 0 0 2px color-mix(in srgb,var(--acid) 18%,transparent); }
+    button { border:1px solid var(--line); background:var(--panel); color:var(--ink); padding:8px 10px; cursor:pointer; }
+    button:hover { border-color:var(--acid); color:var(--acid); }
+    nav { font-size:12px; }
+    nav .group { color:var(--muted); text-transform:uppercase; letter-spacing:.15em; margin:18px 8px 7px; font-size:9px; }
+    nav a { display:block; text-decoration:none; color:var(--muted); padding:6px 8px; border-left:2px solid transparent; }
+    nav a:hover, nav a.active { color:var(--ink); border-left-color:var(--acid); background:color-mix(in srgb,var(--acid) 7%,transparent); }
+    .aside-note { margin-top:28px; padding-top:16px; border-top:1px solid var(--line); color:var(--muted); font:10px/1.6 ui-monospace, monospace; }
+    main { min-width:0; }
+    .hero { min-height:88vh; padding:clamp(54px,8vw,116px) clamp(28px,7vw,112px) 70px; display:flex; flex-direction:column; justify-content:center; border-bottom:1px solid var(--line); position:relative; overflow:hidden; }
+    .hero:after { content:'T3'; position:absolute; right:-.06em; bottom:-.32em; font:700 clamp(180px,34vw,540px)/1 ui-monospace,monospace; color:transparent; -webkit-text-stroke:1px color-mix(in srgb,var(--acid) 25%,transparent); pointer-events:none; }
+    .eyebrow { color:var(--acid); text-transform:uppercase; letter-spacing:.18em; font-size:11px; position:relative; z-index:1; }
+    h1 { font-size:clamp(54px,9vw,132px); line-height:.88; letter-spacing:-.065em; margin:22px 0 28px; max-width:1000px; position:relative; z-index:1; }
+    h1 em { font-weight:400; color:var(--muted); }
+    .lede { font-size:clamp(18px,2.1vw,28px); line-height:1.35; max-width:830px; color:var(--muted); position:relative; z-index:1; }
+    .meta-strip { display:flex; flex-wrap:wrap; gap:8px; margin-top:34px; position:relative; z-index:1; }
+    .chip { border:1px solid var(--line); background:var(--panel); padding:6px 9px; color:var(--muted); font-size:10px; }
+    .chip b { color:var(--ink); font-weight:500; }
+    article { max-width:1280px; margin:0 auto; padding:0 clamp(24px,6vw,88px) 100px; }
+    section { padding:84px 0 20px; scroll-margin-top:20px; }
+    .section-head { display:grid; grid-template-columns:90px minmax(0,1fr); gap:24px; margin-bottom:34px; align-items:start; }
+    .section-no { font:11px ui-monospace,monospace; color:var(--acid); border-top:1px solid var(--acid); padding-top:8px; }
+    h2 { font-size:clamp(34px,5vw,70px); line-height:.98; letter-spacing:-.045em; margin:0; }
+    h3 { font-size:24px; line-height:1.15; margin:0 0 12px; }
+    h4 { font:700 12px ui-monospace,monospace; text-transform:uppercase; letter-spacing:.1em; margin:0 0 8px; color:var(--cyan); }
+    p { margin:0 0 14px; }
+    .intro { font-size:19px; color:var(--muted); max-width:900px; margin:0 0 34px 114px; }
+    .grid { display:grid; grid-template-columns:repeat(12,minmax(0,1fr)); gap:14px; }
+    .card { grid-column:span 4; background:var(--panel); border:1px solid var(--line); padding:22px; box-shadow:0 12px 40px var(--shadow); min-width:0; }
+    .card.wide { grid-column:span 6; }
+    .card.full { grid-column:1/-1; }
+    .card p, .card li { color:var(--muted); }
+    .card .accent { color:var(--ink); }
+    .stat { grid-column:span 3; border-top:2px solid var(--acid); padding:16px 8px 6px; }
+    .stat-value { display:block; font:700 clamp(28px,4vw,50px)/1 ui-monospace,monospace; }
+    .stat-label { display:block; color:var(--muted); font-size:10px; margin-top:8px; }
+    .callout { border-left:3px solid var(--orange); background:color-mix(in srgb,var(--orange) 7%,var(--panel)); padding:18px 20px; margin:22px 0; }
+    .callout strong { color:var(--orange); }
+    .path { color:var(--cyan); font-size:.89em; overflow-wrap:anywhere; }
+    code { color:var(--cyan); background:var(--code); padding:.12em .34em; font-size:.86em; }
+    pre { background:var(--code); border:1px solid var(--line); padding:18px; overflow:auto; color:var(--ink); line-height:1.55; font-size:12px; }
+    ul.clean { margin:10px 0 0; padding:0; list-style:none; }
+    ul.clean li { padding:8px 0 8px 17px; border-top:1px solid var(--line); position:relative; }
+    ul.clean li:before { content:'›'; position:absolute; left:0; color:var(--acid); }
+    .flow { display:grid; grid-template-columns:repeat(7,minmax(120px,1fr)); gap:9px; overflow-x:auto; padding:8px 2px 20px; }
+    .flow .node { min-height:116px; border:1px solid var(--line); background:var(--panel); padding:14px; position:relative; }
+    .flow .node:not(:last-child):after { content:'→'; position:absolute; right:-10px; top:42%; z-index:2; color:var(--acid); background:var(--bg); }
+    .node b { display:block; font:700 11px ui-monospace,monospace; color:var(--acid); margin-bottom:9px; }
+    .node span { color:var(--muted); font-size:13px; line-height:1.35; display:block; }
+    .topology { border:1px solid var(--line); background:var(--code); padding:28px; overflow:auto; }
+    .topology-row { display:flex; gap:10px; align-items:stretch; justify-content:center; min-width:760px; }
+    .topology-box { flex:1; border:1px solid var(--line); padding:15px; text-align:center; background:var(--panel); }
+    .topology-box strong { display:block; font:700 12px ui-monospace,monospace; color:var(--cyan); }
+    .topology-box small { color:var(--muted); }
+    .topology-arrow { text-align:center; color:var(--acid); padding:9px; font:18px ui-monospace,monospace; }
+    table { width:100%; border-collapse:collapse; font-size:13px; }
+    th { text-align:left; color:var(--acid); font-size:10px; text-transform:uppercase; letter-spacing:.08em; border-bottom:1px solid var(--line); padding:10px; }
+    td { border-bottom:1px solid var(--line); padding:11px 10px; vertical-align:top; color:var(--muted); }
+    td:first-child { color:var(--ink); }
+    .scroll-table { overflow:auto; border:1px solid var(--line); background:var(--panel); }
+    .layer-list { counter-reset:layer; }
+    .layer { display:grid; grid-template-columns:50px 180px 1fr; gap:12px; padding:14px 0; border-top:1px solid var(--line); align-items:start; }
+    .layer:before { counter-increment:layer; content:counter(layer,decimal-leading-zero); font:11px ui-monospace,monospace; color:var(--acid); }
+    .layer strong { font:700 12px ui-monospace,monospace; }
+    .layer span { color:var(--muted); }
+    .tag { display:inline-block; font:9px ui-monospace,monospace; padding:3px 5px; border:1px solid var(--line); color:var(--muted); margin:2px; }
+    details { border-top:1px solid var(--line); padding:12px 0; }
+    summary { cursor:pointer; font:700 12px ui-monospace,monospace; color:var(--ink); }
+    details p { color:var(--muted); margin:10px 0 0; }
+    .risk { border-left:2px solid var(--red); padding-left:14px; }
+    .good { border-left:2px solid var(--cyan); padding-left:14px; }
+    .source-index { columns:2; column-gap:30px; }
+    .source-index li { break-inside:avoid; margin-bottom:9px; color:var(--muted); }
+    .search-hidden { display:none !important; }
+    mark { background:var(--acid); color:#111; padding:0 2px; }
+    footer { border-top:1px solid var(--line); padding:30px clamp(24px,6vw,88px); color:var(--muted); font:10px ui-monospace,monospace; display:flex; justify-content:space-between; gap:20px; }
+    @media (max-width: 980px) {
+      .shell { display:block; }
+      aside { position:relative; height:auto; border-right:0; border-bottom:1px solid var(--line); }
+      nav { columns:2; } nav .group { break-after:avoid; }
+      .card,.card.wide { grid-column:span 6; }
+      .stat { grid-column:span 6; }
+      .intro { margin-left:0; }
+    }
+    @media (max-width: 640px) {
+      nav { columns:1; }
+      .hero { min-height:auto; padding-top:65px; }
+      .section-head { grid-template-columns:44px 1fr; gap:12px; }
+      .card,.card.wide { grid-column:1/-1; }
+      .stat { grid-column:span 6; }
+      .layer { grid-template-columns:36px 1fr; }
+      .layer span { grid-column:2; }
+      .source-index { columns:1; }
+    }
+    @media print {
+      aside,.tools { display:none; } .shell { display:block; } body { background:white; color:black; }
+      article { max-width:none; } section { break-before:page; } .card { box-shadow:none; break-inside:avoid; }
+      .hero { min-height:auto; } a { text-decoration:none; } footer { color:#444; }
+    }
+  </style>
+</head>
+<body>
+<div class="shell">
+  <aside>
+    <div class="brand"><div class="brand-mark">T3</div><div><strong>CODEBASE FIELD GUIDE</strong><small>architecture / dependencies / flows</small></div></div>
+    <div class="tools"><input id="search" type="search" placeholder="Filter sections…" aria-label="Filter report sections" /><button id="theme" title="Toggle theme" aria-label="Toggle theme">◐</button></div>
+    <nav aria-label="Report sections">
+      <div class="group">Orientation</div>
+      <a href="#summary">01 / Executive summary</a>
+      <a href="#mental-model">02 / Mental model</a>
+      <a href="#topology">03 / Runtime topology</a>
+      <div class="group">Runtime</div>
+      <a href="#turn-flow">04 / A turn, end to end</a>
+      <a href="#server">05 / Server internals</a>
+      <a href="#providers">06 / Provider boundary</a>
+      <a href="#clients">07 / Client surfaces</a>
+      <a href="#connection">08 / Connection runtime</a>
+      <a href="#remote">09 / Remote &amp; auth</a>
+      <a href="#data">10 / Data, Git &amp; terminals</a>
+      <div class="group">Repository</div>
+      <a href="#workspaces">11 / Workspace map</a>
+      <a href="#dependencies">12 / Dependencies</a>
+      <a href="#tooling">13 / Dev, test &amp; release</a>
+      <a href="#change-guide">14 / Where to make changes</a>
+      <a href="#observations">15 / Design observations</a>
+      <a href="#sources">16 / Source index</a>
+    </nav>
+    <div class="aside-note">SOURCE SNAPSHOT<br><b>main @ e4abc31f</b><br>Generated from code, manifests, and maintainer documentation. No external assets.</div>
+  </aside>
+
+  <main>
+    <header class="hero">
+      <div class="eyebrow">A technical map for first-time maintainers</div>
+      <h1>T3 Code<br><em>under the hood.</em></h1>
+      <p class="lede">A multi-surface control plane for local coding agents: one server owns execution, clients subscribe over typed WebSocket RPC, and an event-sourced core turns user intent into durable history.</p>
+      <div class="meta-strip">
+        <span class="chip">checkout <b>e4abc31f</b></span>
+        <span class="chip">branch <b>main</b></span>
+        <span class="chip">runtime <b>Node 24 / Effect 4 beta</b></span>
+        <span class="chip">workspace <b>pnpm 11 + Vite+</b></span>
+        <span class="chip">report <b>source-grounded</b></span>
+      </div>
+    </header>
+
+    <article>
+      <section id="summary" data-search>
+        <div class="section-head"><div class="section-no">01 — START</div><h2>Executive summary</h2></div>
+        <p class="intro">The shortest useful explanation: T3 Code is not an editor with agents embedded in each client. It is a server-owned agent runtime with several control surfaces.</p>
+        <div class="grid">
+          <div class="stat"><span class="stat-value">5</span><span class="stat-label">BUILT-IN PROVIDER DRIVERS</span></div>
+          <div class="stat"><span class="stat-value">3</span><span class="stat-label">PRIMARY CLIENT SURFACES</span></div>
+          <div class="stat"><span class="stat-value">15</span><span class="stat-label">JS/TS WORKSPACES</span></div>
+          <div class="stat"><span class="stat-value">735</span><span class="stat-label">TEST FILES IN PRODUCT SCOPE</span></div>
+          <div class="card wide">
+            <h3>The invariant</h3>
+            <p class="accent">The server is the execution boundary.</p>
+            <p>Provider subprocesses, terminals, Git, checkpoints, filesystem reads, settings, and durable state all live on the machine running <code>t3</code>. Web, desktop renderer, and mobile are clients of that environment.</p>
+          </div>
+          <div class="card wide">
+            <h3>The center of gravity</h3>
+            <p class="accent">Typed commands become persisted events.</p>
+            <p>The orchestration engine serializes commands, a pure decider emits domain events, SQLite stores them, projectors derive read models, and reactors perform asynchronous side effects.</p>
+          </div>
+          <div class="card">
+            <h4>Remote-ready</h4><p>Direct, bearer-paired, relay, Tailscale, and desktop-managed SSH connections all terminate at the same server protocol.</p>
+          </div>
+          <div class="card">
+            <h4>Multi-surface</h4><p>Web and mobile share nonvisual runtime logic. Desktop wraps the web app and adds an Electron main process, local backend supervision, IPC, WSL, and SSH.</p>
+          </div>
+          <div class="card">
+            <h4>Performance posture</h4><p>Scoped subscriptions, cached projections, bounded histories, native telemetry, and avoiding unnecessary reconnects or process polling are deliberate themes.</p>
+          </div>
+        </div>
+        <div class="callout"><strong>Start here:</strong> read <span class="path">docs/internals/overview.md</span>, then <span class="path">docs/internals/glossary.md</span>. The code becomes much easier once “environment / project / thread / turn / event / reactor / checkpoint” are precise.</div>
+      </section>
+
+      <section id="mental-model" data-search>
+        <div class="section-head"><div class="section-no">02 — MODEL</div><h2>The mental model</h2></div>
+        <p class="intro">Four boundaries explain most of the repository. Keep them separate and the system is surprisingly navigable.</p>
+        <div class="layer-list">
+          <div class="layer"><strong>Environment</strong><span>One running T3 server plus the machine, providers, credentials, state, and workspaces it owns. Stable identity is persisted under the server state directory.</span></div>
+          <div class="layer"><strong>Project</strong><span>An environment-local workspace record rooted at a directory. A logical repository may have separate projects in separate environments.</span></div>
+          <div class="layer"><strong>Thread</strong><span>The durable conversation and workspace-history unit. It owns messages, activities, session state, turns, and checkpoint summaries.</span></div>
+          <div class="layer"><strong>Turn</strong><span>One user-to-agent cycle. It ends when provider session status leaves <code>running</code>; checkpoint/diff follow-up can settle later.</span></div>
+        </div>
+        <div class="grid" style="margin-top:24px">
+          <div class="card wide"><h3>Intent versus fact</h3><p><b>Commands</b> request a state transition. <b>Events</b> state that something happened. The decider is the policy boundary between them; the projector turns facts into the UI-shaped read model.</p></div>
+          <div class="card wide"><h3>Core versus edges</h3><p>Orchestration is provider-neutral and mostly pure. Complexity is pushed to adapters: CLI protocols, OS APIs, Electron IPC, persistence, remote auth, and networking.</p></div>
+        </div>
+      </section>
+
+      <section id="topology" data-search>
+        <div class="section-head"><div class="section-no">03 — SHAPE</div><h2>Runtime topology</h2></div>
+        <p class="intro">All clients converge on one authenticated Effect RPC group over <code>/ws</code>. The server fans outward to local providers and machine capabilities.</p>
+        <div class="topology" role="img" aria-label="T3 Code runtime topology">
+          <div class="topology-row">
+            <div class="topology-box"><strong>WEB</strong><small>React / browser</small></div>
+            <div class="topology-box"><strong>DESKTOP</strong><small>Electron + web renderer</small></div>
+            <div class="topology-box"><strong>MOBILE</strong><small>Expo / React Native</small></div>
+          </div>
+          <div class="topology-arrow">│ shared client-runtime · Atom state · connection supervisor │<br>▼ Effect RPC over authenticated WebSocket ▼</div>
+          <div class="topology-row"><div class="topology-box"><strong>CONTRACTS</strong><small>RPC methods · schemas · commands · events · read models</small></div></div>
+          <div class="topology-arrow">▼</div>
+          <div class="topology-row">
+            <div class="topology-box"><strong>AUTH + HTTP/WS</strong><small>tickets · per-method scopes</small></div>
+            <div class="topology-box"><strong>ORCHESTRATION</strong><small>engine · decider · projector · reactors</small></div>
+            <div class="topology-box"><strong>MACHINE SERVICES</strong><small>SQLite · Git · terminal · files · telemetry</small></div>
+          </div>
+          <div class="topology-arrow">▼ provider adapter registry ▼</div>
+          <div class="topology-row">
+            <div class="topology-box"><strong>CODEX</strong><small>app-server protocol</small></div>
+            <div class="topology-box"><strong>CLAUDE</strong><small>Claude Code</small></div>
+            <div class="topology-box"><strong>CURSOR</strong><small>ACP</small></div>
+            <div class="topology-box"><strong>GROK</strong><small>ACP</small></div>
+            <div class="topology-box"><strong>OPENCODE</strong><small>provider transport</small></div>
+          </div>
+        </div>
+        <div class="callout"><strong>Important:</strong> “remote” changes how a client reaches an environment; it does not split execution across client and server.</div>
+      </section>
+
+      <section id="turn-flow" data-search>
+        <div class="section-head"><div class="section-no">04 — TRACE</div><h2>A turn, end to end</h2></div>
+        <p class="intro">Trace this path whenever behavior is confusing. It crosses every intentional boundary in the architecture.</p>
+        <div class="flow">
+          <div class="node"><b>01 / UI</b><span>User submits a message from web or mobile UI through domain Atom operations.</span></div>
+          <div class="node"><b>02 / RPC</b><span>Shared runtime resolves the current environment session and invokes a typed orchestration RPC.</span></div>
+          <div class="node"><b>03 / ENGINE</b><span>The command enters a single queue; durable receipt lookup makes retries idempotent.</span></div>
+          <div class="node"><b>04 / DECIDE</b><span>Pure domain logic validates invariants and emits one or more events.</span></div>
+          <div class="node"><b>05 / COMMIT</b><span>Event append, SQL projection, in-memory projection, and receipt happen transactionally.</span></div>
+          <div class="node"><b>06 / REACT</b><span>Provider and checkpoint reactors observe committed intent and perform side effects.</span></div>
+          <div class="node"><b>07 / STREAM</b><span>Provider output is normalized into internal commands; clients receive updated thread projections.</span></div>
+        </div>
+        <div class="grid">
+          <div class="card wide">
+            <h3>Detailed sequence</h3>
+            <ul class="clean">
+              <li><code>thread.turn.start</code> is dispatched with a command ID.</li>
+              <li><span class="path">OrchestrationEngine.ts</span> totally orders it with all other commands.</li>
+              <li><span class="path">decider.ts</span> emits durable intent events.</li>
+              <li><span class="path">ProviderCommandReactor.ts</span> calls <span class="path">ProviderService</span>, which routes by thread/provider instance.</li>
+              <li>The adapter talks to a CLI subprocess and emits provider-runtime events.</li>
+              <li><span class="path">ProviderRuntimeIngestion.ts</span> turns those into internal orchestration commands.</li>
+              <li>Assistant text, tool activity, approvals, and session state are projected and streamed.</li>
+              <li>A transition out of <code>running</code> settles the turn; checkpoint capture and diff finalization follow.</li>
+            </ul>
+          </div>
+          <div class="card wide">
+            <h3>Why this indirection exists</h3>
+            <p>The persisted domain history is stable even though provider protocols are not. A provider crash, reconnect, client retry, or delayed checkpoint is handled at an edge without turning the UI into the source of truth.</p>
+            <p>The cost is more concepts and more “requested → completed” pairs. Search for both the command/event name and its reactor when tracing behavior.</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="server" data-search>
+        <div class="section-head"><div class="section-no">05 — CORE</div><h2>Server internals</h2></div>
+        <p class="intro"><code>apps/server</code> is both the published <code>t3</code> CLI and the execution runtime. It owns everything with machine authority.</p>
+        <div class="grid">
+          <div class="card wide"><h3>Transport boundary</h3><p><span class="path">apps/server/src/ws.ts</span> serves the Effect RPC group. Upgrade authentication happens before RPC, then <span class="path">RpcAuthorization.ts</span> checks scopes per method. Streaming subscriptions replace a global broadcast bus.</p></div>
+          <div class="card wide"><h3>Composition</h3><p>Effect <code>Layer</code>s assemble services and explicit dependencies. Startup has a command-readiness gate: reactors/settings/keybindings become ready before the HTTP listener is marked ready, so any accepted socket can dispatch safely.</p></div>
+          <div class="card"><h4>Engine</h4><p>A single worker fiber serializes commands. Accepted command receipts make retry safe; failures reconcile persisted events beyond the starting sequence.</p></div>
+          <div class="card"><h4>Decider</h4><p>Pure command + current state → events. Invariants such as project/thread existence and archival state are centralized here and in <span class="path">commandInvariants.ts</span>.</p></div>
+          <div class="card"><h4>Projectors</h4><p>The pure in-memory projector and persisted projection pipeline build read-optimized state. Retention is bounded for large thread collections.</p></div>
+          <div class="card"><h4>Reactors</h4><p>Queue-backed workers handle provider calls, provider output ingestion, checkpoints, and reverts after events commit.</p></div>
+          <div class="card"><h4>Persistence</h4><p>SQLite stores append-only events, durable receipts, auth records, and denormalized projection tables. The repository currently contains 46 migration-related files.</p></div>
+          <div class="card"><h4>Machine services</h4><p>Terminal PTYs, filesystem, previews, MCP, source control, VCS, background service management, attachments, diagnostics, and telemetry.</p></div>
+        </div>
+        <pre>dispatch(command)
+  → commandQueue.take()                       // total ordering
+  → receipt lookup                            // retry idempotency
+  → decideOrchestrationCommand(command,state) // pure policy
+  → SQL transaction {
+      append(events)
+      project tables
+      write accepted receipt
+    }
+  → swap in-memory read model
+  → publish committed events                  // subscriptions + reactors</pre>
+        <div class="callout"><strong>Testing seam:</strong> asynchronous workers expose <code>drain()</code>, and test-only runtime receipts mark milestones. Production receipt publishing is intentionally a no-op; never build application behavior on it.</div>
+      </section>
+
+      <section id="providers" data-search>
+        <div class="section-head"><div class="section-no">06 — EDGE</div><h2>The provider boundary</h2></div>
+        <p class="intro">Provider complexity is deliberately localized. Orchestration addresses threads and provider instances, not CLI-specific protocols.</p>
+        <div class="scroll-table"><table>
+          <thead><tr><th>Driver kind</th><th>Driver declaration</th><th>Adapter implementation</th><th>Role</th></tr></thead>
+          <tbody>
+            <tr><td>codex</td><td class="path">provider/Drivers/CodexDriver.ts</td><td class="path">provider/Layers/CodexAdapter.ts</td><td>Bridges the Codex app-server JSON-RPC protocol.</td></tr>
+            <tr><td>claudeAgent</td><td class="path">provider/Drivers/ClaudeDriver.ts</td><td class="path">provider/Layers/ClaudeAdapter.ts</td><td>Maps Claude Code lifecycle, output, approvals, and usage.</td></tr>
+            <tr><td>cursor</td><td class="path">provider/Drivers/CursorDriver.ts</td><td class="path">provider/Layers/CursorAdapter.ts</td><td>ACP-speaking provider integration.</td></tr>
+            <tr><td>grok</td><td class="path">provider/Drivers/GrokDriver.ts</td><td class="path">provider/Layers/GrokAdapter.ts</td><td>ACP-speaking provider integration.</td></tr>
+            <tr><td>opencode</td><td class="path">provider/Drivers/OpenCodeDriver.ts</td><td class="path">provider/Layers/OpenCodeAdapter.ts</td><td>OpenCode process and event normalization.</td></tr>
+          </tbody>
+        </table></div>
+        <div class="grid" style="margin-top:14px">
+          <div class="card wide"><h3>Two registries</h3><p><b>ProviderInstanceRegistry</b> turns configured instance entries into live scoped adapters. <b>ProviderAdapterRegistry</b> resolves instance IDs. <b>ProviderService</b> adds thread/session routing above them.</p></div>
+          <div class="card wide"><h3>One normalized contract</h3><p>Adapters start/stop sessions, send/interrupt turns, respond to approvals/input, and expose normalized runtime event streams. Process scope closure owns cleanup.</p></div>
+          <div class="card full"><h3>Adding a common provider</h3><p>Implement a driver declaration and adapter, then register it in <span class="path">apps/server/src/provider/builtInDrivers.ts</span>. If the existing normalized capabilities suffice, orchestration and clients should not change. If they do not, treat that as a contract and multi-surface design change—not an adapter-only patch.</p></div>
+        </div>
+      </section>
+
+      <section id="clients" data-search>
+        <div class="section-head"><div class="section-no">07 — UI</div><h2>Three client surfaces</h2></div>
+        <p class="intro">The clients share protocol and lifecycle policy, but not all UI. Desktop is web-plus-native-shell; mobile is a separate React Native application.</p>
+        <div class="grid">
+          <div class="card">
+            <h4>Web · apps/web</h4><h3>React SPA</h3>
+            <p>React 19, TanStack Router file routes, Tailwind 4, Effect Atom state, Lexical composer, Base UI, diff and code-rendering libraries.</p>
+            <ul class="clean"><li><span class="path">src/main.tsx</span> mounts React and optional Clerk.</li><li><span class="path">src/AppRoot.tsx</span> owns providers and Atom registry.</li><li>IndexedDB caches catalog, shell, thread, config, and VCS data.</li></ul>
+          </div>
+          <div class="card">
+            <h4>Desktop · apps/desktop</h4><h3>Electron shell</h3>
+            <p>An Effect-composed main process supervises a bundled backend and loads the same web application through <code>t3code://app/</code>.</p>
+            <ul class="clean"><li>Preload exposes a narrow <code>desktopBridge</code>.</li><li>IPC owns settings, files, SSH, WSL, previews, updates, and native integration.</li><li>Hash history avoids packaged protocol path problems.</li></ul>
+          </div>
+          <div class="card">
+            <h4>Mobile · apps/mobile</h4><h3>Expo / React Native</h3>
+            <p>React Navigation, native stack headers, adaptive phone/tablet layouts, native gestures, Clerk Expo, and AsyncStorage.</p>
+            <ul class="clean"><li><span class="path">src/App.tsx</span> composes providers.</li><li><span class="path">src/Stack.tsx</span> defines navigation.</li><li>Expo network and AppState adapt connectivity/lifecycle.</li></ul>
+          </div>
+          <div class="card full">
+            <h3>Shared versus surface-owned</h3>
+            <div class="scroll-table"><table><thead><tr><th>Concern</th><th>Shared</th><th>Surface-owned</th></tr></thead><tbody>
+              <tr><td>Contracts / RPC</td><td><span class="path">packages/contracts</span> + <span class="path">client-runtime/rpc</span></td><td>Transport platform layers and UI hooks.</td></tr>
+              <tr><td>Connection policy</td><td>Resolver, driver, registry, supervisor, auth, retries.</td><td>Network/app lifecycle signals and storage implementations.</td></tr>
+              <tr><td>Domain state</td><td>Focused Atom factories under <span class="path">client-runtime/state/*</span>.</td><td>Application Atom runtime, selectors, hooks, components.</td></tr>
+              <tr><td>Navigation / UI</td><td>Domain vocabulary and operation contracts.</td><td>TanStack Router web UI versus React Navigation mobile UI.</td></tr>
+              <tr><td>Native powers</td><td>Typed contracts where data crosses a boundary.</td><td>Electron main/preload IPC or Expo/native modules.</td></tr>
+            </tbody></table></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="connection" data-search>
+        <div class="section-head"><div class="section-no">08 — LINK</div><h2>Connection runtime</h2></div>
+        <p class="intro"><code>packages/client-runtime</code> is the nonvisual client brain. It intentionally has no package-root export; subpaths are architectural boundaries.</p>
+        <div class="flow" style="grid-template-columns:repeat(5,minmax(150px,1fr))">
+          <div class="node"><b>RESOLVER</b><span>Turns primary, bearer, relay, or SSH catalog entries into authenticated endpoints.</span></div>
+          <div class="node"><b>DRIVER</b><span>Performs one prepare/open/synchronize attempt.</span></div>
+          <div class="node"><b>RPC SESSION</b><span>Owns one socket attempt, client, initial config, probe, ready, and closed signals.</span></div>
+          <div class="node"><b>SUPERVISOR</b><span>The only retry owner. Manages desired state, session scope, backoff, wakeups, and health.</span></div>
+          <div class="node"><b>REGISTRY</b><span>Owns catalog and one environment-scoped supervisor per environment.</span></div>
+        </div>
+        <div class="grid">
+          <div class="card wide"><h3>Retry semantics</h3><p>Transient failure retries forever with exponential backoff capped at 16 seconds; 30 seconds of stability resets it. Offline waits do not spend retry attempts. Authentication/configuration failures block until input changes.</p></div>
+          <div class="card wide"><h3>Foreground semantics</h3><p>Activation does not blindly reconnect. While connected, the runtime probes the current lease; meaningful mobile background suspension can request replacement because the OS may have killed the socket.</p></div>
+          <div class="card wide"><h3>Data semantics</h3><p>Finite requests, durable subscriptions, and commands are separate APIs. Shell/thread snapshots remain available offline, while sync status is explicit and independent from transport status.</p></div>
+          <div class="card wide"><h3>Platform contract</h3><p>Web/mobile provide network status, application wakeups, cloud credentials, device identity, registrations, persistence, HTTP, crypto, and telemetry. They adapt capabilities—not connection policy.</p></div>
+        </div>
+      </section>
+
+      <section id="remote" data-search>
+        <div class="section-head"><div class="section-no">09 — TRUST</div><h2>Remote access &amp; authentication</h2></div>
+        <p class="intro">Access method and launch method are independent. Several routes can reach the same stable environment identity.</p>
+        <div class="scroll-table"><table>
+          <thead><tr><th>Connection target</th><th>What it means</th><th>Where complexity lives</th></tr></thead>
+          <tbody>
+            <tr><td>Primary</td><td>Platform-managed local server: CLI-served web or desktop backend.</td><td>Platform registration and desktop backend pool.</td></tr>
+            <tr><td>Bearer</td><td>Manually paired direct HTTP/WebSocket endpoint, including Tailscale URLs.</td><td>Onboarding, endpoint selection, environment auth.</td></tr>
+            <tr><td>Relay</td><td>T3 Connect-managed tunnel for NAT/firewall/mobile reachability.</td><td>Cloud auth, DPoP, relay discovery, tunnel lifecycle.</td></tr>
+            <tr><td>SSH</td><td>Desktop discovers/launches a remote server and forwards a local port.</td><td>Electron main + <span class="path">packages/ssh</span>; renderer still sees a normal environment.</td></tr>
+          </tbody>
+        </table></div>
+        <div class="grid" style="margin-top:14px">
+          <div class="card wide"><h3>Environment credentials</h3><p>Pairing bootstrap credentials exchange for scoped sessions. Browser clients use an HTTP-only session cookie; non-browser clients can use bearer tokens; relay clients can use DPoP-bound one-hour tokens.</p></div>
+          <div class="card wide"><h3>WebSocket tickets</h3><p>A long-lived credential calls <code>POST /api/auth/websocket-ticket</code>. Only the resulting five-minute, single-purpose ticket enters the socket URL. RPC methods still enforce scopes individually.</p></div>
+          <div class="card wide"><h3>T3 Connect</h3><p><span class="path">infra/relay</span> is Cloudflare Workers + PostgreSQL/Drizzle + Clerk + Alchemy. It brokers identity, records, discovery, and managed publishing; application traffic uses the provisioned tunnel hostname rather than flowing through the relay Worker hot path.</p></div>
+          <div class="card wide"><h3>Hosted pairing</h3><p><code>app.t3.codes</code> is a static client, not a proxy. Pair tokens live in URL fragments, are exchanged directly with the backend, then stripped. HTTPS browser mixed-content constraints still apply.</p></div>
+        </div>
+        <div class="callout"><strong>Scope model:</strong> <code>orchestration:read</code>, <code>orchestration:operate</code>, <code>terminal:operate</code>, <code>review:write</code>, <code>access:read/write</code>, and <code>relay:read/write</code>. A valid socket is not blanket authorization.</div>
+      </section>
+
+      <section id="data" data-search>
+        <div class="section-head"><div class="section-no">10 — STATE</div><h2>Data, Git &amp; machine state</h2></div>
+        <p class="intro">Durable application state and workspace state are related but distinct: SQLite remembers the domain; Git checkpoints remember the filesystem.</p>
+        <div class="grid">
+          <div class="card wide"><h3>SQLite domain state</h3><p>Append-only orchestration events are the history. Persisted projections answer queries efficiently, and durable command receipts make network retries idempotent. Auth, settings, environment state, and supporting records live beside them.</p></div>
+          <div class="card wide"><h3>Git checkpoints</h3><p>Turns are bracketed by hidden Git refs through the <code>VcsCheckpointOps</code> contract. Baseline and completed snapshots enable exact turn/thread diffs and workspace restoration.</p></div>
+          <div class="card"><h4>Worktrees</h4><p>A thread may run in its own Git worktree. The project keeps a workspace root; thread configuration chooses main tree or isolated path.</p></div>
+          <div class="card"><h4>Terminal</h4><p>The server owns PTYs and exposes attach/input/resize/restart/terminate over scoped RPC streams. Clients render terminal state but never own the process.</p></div>
+          <div class="card"><h4>Filesystem &amp; preview</h4><p>Reads, diffs, project scripts, attachments, review previews, and browser preview automation cross typed server boundaries.</p></div>
+          <div class="card"><h4>Telemetry</h4><p>A Rust sidecar samples process trees with OS APIs. Electron contributes power/app metrics over inherited file descriptors. History is bounded in memory, not persisted.</p></div>
+        </div>
+        <div class="callout"><strong>Failure isolation:</strong> the resource monitor is a supervised executable rather than a Node native addon. A monitor crash cannot corrupt the server runtime, and missing telemetry degrades to unavailable.</div>
+      </section>
+
+      <section id="workspaces" data-search>
+        <div class="section-head"><div class="section-no">11 — MAP</div><h2>Workspace map</h2></div>
+        <p class="intro">The monorepo has five shipped applications, seven reusable packages, a relay workspace, repo tooling, and native components.</p>
+        <div class="scroll-table"><table>
+          <thead><tr><th>Workspace / area</th><th>Responsibility</th><th>Key dependencies / notes</th></tr></thead>
+          <tbody>
+            <tr><td class="path">apps/server</td><td>Published <code>t3</code> CLI and server runtime.</td><td>Effect, contracts, shared, Tailscale, protocol clients; builds/serves web.</td></tr>
+            <tr><td class="path">apps/web</td><td>React/Vite client and desktop renderer.</td><td>React, TanStack Router, Tailwind, Lexical, contracts, client-runtime.</td></tr>
+            <tr><td class="path">apps/desktop</td><td>Electron shell, backend pool, IPC, WSL, SSH, updates.</td><td>Electron, Node Effect platform, SSH/Tailscale packages.</td></tr>
+            <tr><td class="path">apps/mobile</td><td>Expo iOS/Android remote client.</td><td>React Native, Expo, React Navigation, client-runtime.</td></tr>
+            <tr><td class="path">apps/marketing</td><td>Public marketing site.</td><td>Astro and shared brand helpers.</td></tr>
+            <tr><td class="path">packages/contracts</td><td>Effect Schema contracts: RPC, commands, events, read models, auth, terminal, files, VCS.</td><td>Lowest-level product vocabulary.</td></tr>
+            <tr><td class="path">packages/shared</td><td>Framework-neutral utilities: workers, auth/signing, Git helpers, logging, observability.</td><td>Depends narrowly on contracts.</td></tr>
+            <tr><td class="path">packages/client-runtime</td><td>Connections, auth, RPC, environment registry, shared Atom state.</td><td>No root export; explicit subpaths only.</td></tr>
+            <tr><td class="path">packages/ssh</td><td>SSH config/auth/commands and remote tunnel manager.</td><td>Used by desktop.</td></tr>
+            <tr><td class="path">packages/tailscale</td><td>Tailscale CLI and serve lifecycle wrapper.</td><td>Used by server, desktop, scripts.</td></tr>
+            <tr><td class="path">packages/effect-acp</td><td>Effect implementation/client for Agent Client Protocol.</td><td>Provider protocol boundary.</td></tr>
+            <tr><td class="path">packages/effect-codex-app-server</td><td>Effect client for Codex app-server JSON-RPC.</td><td>Codex protocol boundary.</td></tr>
+            <tr><td class="path">infra/relay</td><td>Hosted T3 Connect relay/control plane.</td><td>Cloudflare Workers, Clerk, PostgreSQL, Drizzle, Alchemy.</td></tr>
+            <tr><td class="path">native/resource-monitor</td><td>Rust process/power telemetry sidecar.</td><td><code>sysinfo</code>, NDJSON protocol.</td></tr>
+            <tr><td class="path">native/libghostty-vt</td><td>Native/WASM terminal emulation component.</td><td>Terminal rendering support.</td></tr>
+            <tr><td class="path">oxlint-plugin-t3code</td><td>Repository-specific lint rules.</td><td>Architecture and quality enforcement.</td></tr>
+            <tr><td class="path">scripts</td><td>Dev runner, artifacts, release tooling, mobile checks/showcase, asset generation.</td><td>Workspace-aware operational tooling.</td></tr>
+          </tbody>
+        </table></div>
+      </section>
+
+      <section id="dependencies" data-search>
+        <div class="section-head"><div class="section-no">12 — DEPS</div><h2>Dependency architecture</h2></div>
+        <p class="intro">Internal dependencies form a mostly clean vocabulary-to-runtime-to-application direction. Explicit subpath exports protect package boundaries.</p>
+        <pre>@t3tools/contracts
+      ↓
+@t3tools/shared ───────→ @t3tools/ssh / @t3tools/tailscale
+      ↓                         ↓
+@t3tools/client-runtime ────────┼────────→ web / mobile / desktop / relay
+                                └────────→ server
+
+effect-acp ─────────────────────────────→ server provider adapters
+effect-codex-app-server ────────────────→ server Codex adapter
+web build ──────────────────────────────→ server static asset packaging</pre>
+        <div class="grid">
+          <div class="card"><h4>Effect 4 beta</h4><p>Core runtime model: typed errors, services, layers, scopes, streams, queues, structured concurrency, schemas, SQL, and Atom reactivity.</p></div>
+          <div class="card"><h4>TypeScript 6</h4><p>Strict ESNext code with native-preview tooling and Effect's tsgo patch/plugin.</p></div>
+          <div class="card"><h4>Vite+</h4><p><code>vp</code> drives install, tasks, checking, testing, packaging, and workspace orchestration; Vite is aliased to a VoidZero/Vite+ core build.</p></div>
+          <div class="card"><h4>React stack</h4><p>React 19, React Compiler, TanStack Router, Tailwind 4, Base UI, Lexical, diff/syntax packages.</p></div>
+          <div class="card"><h4>Native shells</h4><p>Electron 41 desktop; Expo 56 + React Native 0.85 mobile; Rust sidecar for resource telemetry.</p></div>
+          <div class="card"><h4>Data &amp; cloud</h4><p>Effect SQLite on environment servers; Drizzle + PostgreSQL in relay; Clerk identity; Cloudflare tunnel/Workers.</p></div>
+        </div>
+        <div class="callout"><strong>Dependency caution:</strong> core libraries are pinned to beta versions and the workspace carries multiple pnpm patches. Before upgrading Effect, Expo, React Native, Vite+, or diff/rendering libraries, inspect <span class="path">pnpm-workspace.yaml</span> and <span class="path">patches/</span>.</div>
+      </section>
+
+      <section id="tooling" data-search>
+        <div class="section-head"><div class="section-no">13 — WORK</div><h2>Development, test &amp; release</h2></div>
+        <p class="intro">The repository optimizes for isolated worktrees, single-origin remote-safe development, and focused deterministic verification.</p>
+        <div class="grid">
+          <div class="card wide">
+            <h3>First run</h3>
+            <pre>vp i
+vp run dev          # contracts + server + web watch
+# open the one-time pairing URL printed by dev-runner</pre>
+            <p>Node 24 is required. Bun is optional; server platform adapters select Bun when present and Node otherwise.</p>
+          </div>
+          <div class="card wide">
+            <h3>Dev topology</h3>
+            <p><span class="path">scripts/dev-runner.ts</span> derives stable port offsets from the worktree path and scans collisions. Vite proxies <code>/api</code>, <code>/ws</code>, <code>/oauth</code>, and <code>/.well-known</code>; never bake localhost origins into the bundle.</p>
+            <p>Worktrees default to isolated <code>&lt;worktree&gt;/.t3/userdata</code>. The main checkout defaults to <code>~/.t3/dev</code>.</p>
+          </div>
+          <div class="card"><h4>Focused verification</h4><p><code>vp test run &lt;files&gt;</code>, targeted lint/typecheck, worker drains, and typed receipts. Avoid sleep/poll tests and repo-wide checks during ordinary changes.</p></div>
+          <div class="card"><h4>CI</h4><p>Format/lint + workspace typecheck + desktop build, workspace tests, macOS mobile native static analysis, and release smoke.</p></div>
+          <div class="card"><h4>Desktop release</h4><p>Electron Builder emits DMG, NSIS, and AppImage; signing/notarization is conditional on platform credentials.</p></div>
+          <div class="card"><h4>Other releases</h4><p>Server npm package via release automation/OIDC, web deployment, Expo/EAS mobile distribution, Alchemy relay deploy, native telemetry artifacts.</p></div>
+          <div class="card"><h4>Test shape</h4><p>Approximately 735 test files across product workspaces. Server tests emphasize SQLite/Git/worktree behavior; web uses Vitest and MSW; desktop uses Playwright Core for preview automation.</p></div>
+          <div class="card"><h4>Repository scale</h4><p>Roughly 2,638 tracked files in apps/packages/infra/native/scripts/docs and ~374k non-generated TypeScript/TSX lines in product/tooling scope.</p></div>
+        </div>
+      </section>
+
+      <section id="change-guide" data-search>
+        <div class="section-head"><div class="section-no">14 — ROUTE</div><h2>Where to make changes</h2></div>
+        <p class="intro">Use these routes as starting hypotheses, then search for an existing pattern before creating a new abstraction.</p>
+        <div class="scroll-table"><table>
+          <thead><tr><th>You want to change…</th><th>Start here</th><th>Then check</th></tr></thead>
+          <tbody>
+            <tr><td>A domain behavior or lifecycle rule</td><td class="path">packages/contracts/src/orchestration.ts<br>apps/server/src/orchestration/decider.ts<br>projector.ts</td><td>Command invariants, projection persistence, reactors, all clients, focused event-state tests.</td></tr>
+            <tr><td>A WebSocket operation</td><td class="path">packages/contracts/src/rpc.ts<br>apps/server/src/ws.ts</td><td>RPC authorization scopes, client-runtime session/client, web/mobile consumers.</td></tr>
+            <tr><td>A provider-only capability</td><td class="path">apps/server/src/provider/Drivers<br>provider/Layers/*Adapter.ts</td><td>ProviderAdapter contract and whether normalized runtime events already express it.</td></tr>
+            <tr><td>Connection/retry/auth behavior</td><td class="path">packages/client-runtime/src/connection<br>authorization<br>rpc</td><td>Both platform layers, cache cleanup, offline behavior, relay and direct targets.</td></tr>
+            <tr><td>A web/desktop UI feature</td><td class="path">apps/web/src/routes<br>components<br>state</td><td>Settings, command palette, keybinding, Electron bridge, mobile equivalent.</td></tr>
+            <tr><td>A mobile UI feature</td><td class="path">apps/mobile/src/Stack.tsx<br>features<br>components</td><td>Phone/tablet layouts, iOS/Android behavior, shared client-runtime operations.</td></tr>
+            <tr><td>Desktop native integration</td><td class="path">apps/desktop/src/ipc<br>preload.ts<br>electron</td><td>Typed IPC contracts, context isolation, packaged protocol, WSL/SSH backends.</td></tr>
+            <tr><td>Git/diff/revert semantics</td><td class="path">apps/server/src/vcs<br>checkpointing<br>orchestration/Layers/CheckpointReactor.ts</td><td>Worktrees, provider rollback, projection summaries, reverse action and UI visibility.</td></tr>
+            <tr><td>Remote access</td><td class="path">packages/client-runtime/src/connection<br>infra/relay<br>packages/ssh<br>packages/tailscale</td><td>Direct/relay/tunnel modes, multi-device, mixed-content restrictions, auth scopes.</td></tr>
+            <tr><td>Shared vocabulary over a boundary</td><td class="path">packages/contracts/src</td><td>Server, web, desktop, mobile, relay, schema compatibility and migrations.</td></tr>
+          </tbody>
+        </table></div>
+        <div class="callout"><strong>Surface checklist:</strong> entry points (chat/settings/command palette/keybinding), web/desktop/mobile, all five providers where relevant, contracts, reverse state, local/remote/tunnel, and user/internals/operations docs.</div>
+      </section>
+
+      <section id="observations" data-search>
+        <div class="section-head"><div class="section-no">15 — READ</div><h2>Design observations</h2></div>
+        <p class="intro">These are architectural readings, not refactoring requests. They identify where the design is deep, and where changes are likely to amplify.</p>
+        <div class="grid">
+          <div class="card wide good"><h3>Strong boundary: server authority</h3><p>One execution boundary makes remote behavior unsurprising. Clients never need partial filesystem, terminal, or provider implementations, and access methods do not infect domain logic.</p></div>
+          <div class="card wide good"><h3>Strong boundary: shared client runtime</h3><p>Connection policy is centralized while platform differences are capability adapters. The “one retry owner” rule prevents competing reconnect loops and stale-session bugs.</p></div>
+          <div class="card wide good"><h3>Strong seam: event sourcing + adapters</h3><p>Pure decider/projector logic is testable without processes, while provider volatility stays behind adapter and ingestion boundaries. Durable receipts address retries explicitly.</p></div>
+          <div class="card wide good"><h3>Strong seam: drainable workers</h3><p>Queue completion is observable without timing guesses. This supports deterministic integration tests for asynchronous provider/checkpoint workflows.</p></div>
+          <div class="card wide risk"><h3>Hotspot: orchestration breadth</h3><p>Large command/event unions, decider switches, and projection logic mean a new cross-cutting thread behavior can touch contracts, invariants, decider, projector, persisted projection, reactor, and UI. Follow an existing command end to end.</p></div>
+          <div class="card wide risk"><h3>Hotspot: provider semantic mismatch</h3><p>Five CLIs differ in sessions, approvals, usage, protocol errors, and rollback. Resist leaking provider-specific conditionals into orchestration; expand normalized capabilities only when the product truly needs them.</p></div>
+          <div class="card wide risk"><h3>Hotspot: remote/auth matrix</h3><p>Primary, bearer, relay, SSH, browser cookies, bearer and DPoP tokens, WebSocket tickets, and hosted mixed-content rules create a large state matrix. Connection and auth changes need scenario-driven tests.</p></div>
+          <div class="card wide risk"><h3>Hotspot: version volatility</h3><p>Effect 4 beta, TypeScript native preview, Vite+ core, Expo/React Native, and patched dependencies increase upgrade risk. Pinning is deliberate; broad dependency upgrades should be isolated.</p></div>
+          <div class="card full">
+            <h3>Practical reading order</h3>
+            <ol>
+              <li><span class="path">docs/internals/overview.md</span> and <span class="path">glossary.md</span></li>
+              <li><span class="path">packages/contracts/src/orchestration.ts</span> and <span class="path">rpc.ts</span></li>
+              <li><span class="path">apps/server/src/orchestration/Layers/OrchestrationEngine.ts</span>, then one command through decider/projector/reactor</li>
+              <li><span class="path">docs/internals/providers.md</span>, one driver, and its adapter</li>
+              <li><span class="path">docs/internals/connection-runtime.md</span> and <span class="path">packages/client-runtime/src/connection</span></li>
+              <li>One client startup: web first, then desktop wrapper or mobile native stack</li>
+              <li><span class="path">docs/internals/remote.md</span> only after local runtime flow is clear</li>
+            </ol>
+          </div>
+        </div>
+      </section>
+
+      <section id="sources" data-search>
+        <div class="section-head"><div class="section-no">16 — INDEX</div><h2>Source index</h2></div>
+        <p class="intro">Representative paths used to ground this report. Paths are relative to repository root.</p>
+        <ul class="source-index">
+          <li><span class="path">AGENTS.md</span> — repository architecture and contribution constraints</li>
+          <li><span class="path">README.md</span> — product and installation overview</li>
+          <li><span class="path">docs/internals/overview.md</span> — canonical architecture</li>
+          <li><span class="path">docs/internals/glossary.md</span> — domain vocabulary</li>
+          <li><span class="path">docs/internals/workspace-layout.md</span> — workspace responsibilities</li>
+          <li><span class="path">docs/internals/connection-runtime.md</span> — connection ownership/state machine</li>
+          <li><span class="path">docs/internals/providers.md</span> — provider registry/adapter model</li>
+          <li><span class="path">docs/internals/remote.md</span> — access and environment identity</li>
+          <li><span class="path">docs/internals/environment-auth.md</span> — scopes and token flows</li>
+          <li><span class="path">docs/internals/t3-connect.md</span> — relay/Clerk/tunnel lifecycle</li>
+          <li><span class="path">docs/internals/resource-telemetry.md</span> — native telemetry design</li>
+          <li><span class="path">docs/internals/scripts.md</span> — development and build commands</li>
+          <li><span class="path">docs/internals/ci.md</span> — quality gates</li>
+          <li><span class="path">packages/contracts/src/rpc.ts</span> — Effect RPC group</li>
+          <li><span class="path">packages/contracts/src/orchestration.ts</span> — domain contracts</li>
+          <li><span class="path">packages/client-runtime/README.md</span> — public client-runtime boundaries</li>
+          <li><span class="path">packages/client-runtime/src/connection/supervisor.ts</span> — retry owner</li>
+          <li><span class="path">packages/client-runtime/src/connection/registry.ts</span> — environment scopes</li>
+          <li><span class="path">packages/client-runtime/src/rpc/session.ts</span> — one RPC attempt</li>
+          <li><span class="path">packages/shared/src/DrainableWorker.ts</span> — deterministic worker primitive</li>
+          <li><span class="path">apps/server/src/ws.ts</span> — RPC serving</li>
+          <li><span class="path">apps/server/src/serverRuntimeStartup.ts</span> — readiness lifecycle</li>
+          <li><span class="path">apps/server/src/orchestration/Layers/OrchestrationEngine.ts</span> — event engine</li>
+          <li><span class="path">apps/server/src/orchestration/decider.ts</span> — command policy</li>
+          <li><span class="path">apps/server/src/orchestration/projector.ts</span> — read model</li>
+          <li><span class="path">apps/server/src/orchestration/Layers/ProviderCommandReactor.ts</span> — intent to provider</li>
+          <li><span class="path">apps/server/src/orchestration/Layers/ProviderRuntimeIngestion.ts</span> — provider to domain</li>
+          <li><span class="path">apps/server/src/orchestration/Layers/CheckpointReactor.ts</span> — workspace snapshots/reverts</li>
+          <li><span class="path">apps/server/src/provider/builtInDrivers.ts</span> — five drivers</li>
+          <li><span class="path">apps/server/src/provider/Layers/ProviderService.ts</span> — provider facade</li>
+          <li><span class="path">apps/server/src/vcs/VcsDriver.ts</span> — VCS contract</li>
+          <li><span class="path">apps/web/src/main.tsx</span> / <span class="path">AppRoot.tsx</span> — web startup</li>
+          <li><span class="path">apps/web/src/connection/runtime.ts</span> — web runtime composition</li>
+          <li><span class="path">apps/desktop/src/main.ts</span> — Electron main composition</li>
+          <li><span class="path">apps/desktop/src/preload.ts</span> — renderer bridge</li>
+          <li><span class="path">apps/desktop/src/backend/DesktopBackendPool.ts</span> — local/WSL backends</li>
+          <li><span class="path">apps/mobile/src/App.tsx</span> / <span class="path">Stack.tsx</span> — mobile startup/navigation</li>
+          <li><span class="path">apps/mobile/src/connection/runtime.ts</span> — mobile runtime composition</li>
+          <li><span class="path">scripts/dev-runner.ts</span> — worktree-safe dev stack</li>
+          <li><span class="path">pnpm-workspace.yaml</span> — catalog, overrides, patches, workspace policy</li>
+          <li><span class="path">package.json</span> — root task surface</li>
+        </ul>
+      </section>
+    </article>
+
+    <footer><span>T3 CODE / CODEBASE FIELD GUIDE / main@e4abc31f</span><span>Static report · print-friendly · no external requests</span></footer>
+  </main>
+</div>
+<script>
+  const root = document.documentElement;
+  const themeButton = document.getElementById('theme');
+  themeButton.addEventListener('click', () => {
+    root.dataset.theme = root.dataset.theme === 'dark' ? 'light' : 'dark';
+  });
+
+  const links = [...document.querySelectorAll('nav a')];
+  const sections = [...document.querySelectorAll('section[data-search]')];
+  const observer = new IntersectionObserver((entries) => {
+    const visible = entries.filter(e => e.isIntersecting).sort((a,b) => b.intersectionRatio-a.intersectionRatio)[0];
+    if (!visible) return;
+    links.forEach(a => a.classList.toggle('active', a.hash === '#' + visible.target.id));
+  }, { rootMargin: '-15% 0px -70% 0px', threshold: [0,.15,.5] });
+  sections.forEach(s => observer.observe(s));
+
+  const search = document.getElementById('search');
+  search.addEventListener('input', () => {
+    const query = search.value.trim().toLowerCase();
+    sections.forEach(section => {
+      section.classList.toggle('search-hidden', query && !section.textContent.toLowerCase().includes(query));
+    });
+    links.forEach(link => {
+      const section = document.querySelector(link.hash);
+      link.classList.toggle('search-hidden', section && section.classList.contains('search-hidden'));
+    });
+  });
+</script>
+</body>
+</html>
